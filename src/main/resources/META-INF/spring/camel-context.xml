@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="
+       http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd
+       http://camel.apache.org/schema/spring http://camel.apache.org/schema/spring/camel-spring.xsd">
+
+	<bean id="activemq" class="org.apache.activemq.camel.component.ActiveMQComponent">
+		<property name="connectionFactory">
+			<bean class="org.apache.activemq.ActiveMQConnectionFactory">
+				<property name="brokerURL" value="tcp://localhost:61616" />
+			</bean>
+		</property>
+	</bean>
+
+	<bean id="orderProcessor"
+		class="net.travisdazell.camel.examples.throttler.OrderProcessor">
+	</bean>
+
+	<camelContext xmlns="http://camel.apache.org/schema/spring">
+		<route>
+			<from uri="file://incoming" />
+			
+			<to uri="bean:orderProcessor?method=processIncomingOrder" />
+			
+			<throttle timePeriodMillis="5000" asyncDelayed="true">
+				<constant>1</constant>
+				<to uri="activemq:queue:ORDERS.INCOMING" />
+			</throttle>
+		</route>
+	</camelContext>
+
+</beans>
